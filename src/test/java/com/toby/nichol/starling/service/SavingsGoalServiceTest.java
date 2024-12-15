@@ -54,6 +54,7 @@ class SavingsGoalServiceTest {
         assertEquals(expected, actual);
     }
 
+    //generates a wiremock stub to be tested against. Will return a savingsGoal response for any request matching the pattern below.
     private void getStub(UUID transferUuid) throws IOException {
         String path = "src/test/resources"+ "/data/savingsGoalResponse.json";
         File file = new File(path);

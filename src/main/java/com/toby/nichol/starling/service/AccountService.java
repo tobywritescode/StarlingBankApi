@@ -27,12 +27,14 @@ public class AccountService {
     @Value("${base_url}")
     private String BASE_URL;
 
+    //Method gets CSV file of the customer statement for the given week and returns the method call getSpendingFromStatement(responseBody)
+    //getSpendingFromStatement returns a list of BigDecimal values less than 0 from the CSV data
     public List<BigDecimal> getAccountSpends(String customerUid, String startDate, String endDate, String bearer) {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", bearer);
-        headers.set("Accept", "text/csv");
+        headers.set("Accept", "text/csv"); //<- accept the CSV file format
         HttpEntity<String> entity = new HttpEntity<>(headers);
-        String url =  getAccountStatementUrl(startDate, endDate, customerUid, BASE_URL);
+        String url =  getAccountStatementUrl(startDate, endDate, customerUid, BASE_URL); //<- build the header and request url.
         ResponseEntity<String> response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,
@@ -41,7 +43,7 @@ public class AccountService {
         );
 
         String responseBody;
-        if(response.getStatusCode().value() == 200){
+        if(response.getStatusCode().value() == 200){ //<- if 200 response we can get the statement as a string.
             responseBody = response.getBody();
         }else{
             throw new RuntimeException("Could not retrieve statement.");
@@ -49,6 +51,8 @@ public class AccountService {
         return getSpendingFromStatement(responseBody);
     }
 
+    //As we don't need the entire transaction the following code parses the CSV object
+    // then, using a stream, isolates the amount column, formats the values to BigDecimal and returns only values less than 0.
     private List<BigDecimal> getSpendingFromStatement(String responseBody) {
         CsvMapper mapper = new CsvMapper();
         CsvSchema headerSchema = CsvSchema.emptySchema().withHeader();

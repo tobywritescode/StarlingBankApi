@@ -28,11 +28,15 @@ public class HomeController {
     private final SavingsGoalService savingsGoalService;
 
     @GetMapping("/run")
+    //application requires 4 params to run; auth bearer, customer UUID, savings goal UUID, start date and end date.
     public ResponseEntity<SavingsGoalResponse> runApp(@RequestHeader(HttpHeaders.AUTHORIZATION) String bearer,
                                                       @RequestParam("customerid") String customerUid, @RequestParam("savingsgoalid") String savingsGoalUid,
                                                       @RequestParam("startdate") String startDate, @RequestParam("enddate") String endDate ){
+        //Return a list of bigdecimals (spending) from the account service
         List<BigDecimal> accountSpending = accountService.getAccountSpends(customerUid, startDate, endDate, bearer);
+        //Use the roundup service to calculate the rounde dup value in minor units to add to a savings goal
         Integer roundedUpSpending = roundUpService.doRoundUp(accountSpending);
+        //Add the value to the savings goal provided and return the response from the Starling api.
         return savingsGoalService.addToSavingsGoal(roundedUpSpending, customerUid, savingsGoalUid, bearer);
     }
 
