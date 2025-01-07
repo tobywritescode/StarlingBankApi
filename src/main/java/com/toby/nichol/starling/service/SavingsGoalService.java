@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.UUID;
@@ -33,13 +34,17 @@ public class SavingsGoalService {
         HttpEntity<SavingsGoalRequest> entity = new HttpEntity<>(savingsGoalRequest, headers);
         String url =  getAddToSavingsGoalUrl(customerUid, savingsGoalUid, UUID.randomUUID(), BASE_URL);
 
-        //to avoid any unnecessary transcoding of objects and interpretation of status codes
-        // I've simply returned the responseEntity of the addToSavingsGoal request back to the endpoint to act as the response to the user.
-        return restTemplate.exchange(
-                url,
-                HttpMethod.PUT,
-                entity,
-                SavingsGoalResponse.class
-        );
+        try{
+            return restTemplate.exchange(
+                    url,
+                    HttpMethod.PUT,
+                    entity,
+                    SavingsGoalResponse.class
+            );
+        }catch (HttpClientErrorException e){
+            return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAs(SavingsGoalResponse.class));
+        }
+
+
     }
 }
