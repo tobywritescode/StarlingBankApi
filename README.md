@@ -1,4 +1,4 @@
-# Toby Nichol - Starling Tech Test - RoundUpService
+# Toby Nichol - Starling Bank Api - RoundUpService
 
 **Description:**
 
