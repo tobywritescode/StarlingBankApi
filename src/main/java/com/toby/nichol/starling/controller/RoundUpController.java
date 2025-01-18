@@ -16,7 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/roundup")
 @RequiredArgsConstructor
-public class HomeController {
+public class RoundUpController {
 
     @Autowired
     private final AccountService accountService;
@@ -29,7 +29,7 @@ public class HomeController {
 
     @GetMapping("/run")
     //application requires 4 params to run; auth bearer, customer UUID, savings goal UUID, start date and end date.
-    public ResponseEntity<SavingsGoalResponse> runApp(@RequestHeader(HttpHeaders.AUTHORIZATION) String bearer,
+    public ResponseEntity<SavingsGoalResponse> runRoundUp(@RequestHeader(HttpHeaders.AUTHORIZATION) String bearer,
                                                       @RequestParam("customerid") String customerUid, @RequestParam("savingsgoalid") String savingsGoalUid,
                                                       @RequestParam("startdate") String startDate, @RequestParam("enddate") String endDate ){
         //Return a list of bigdecimals (spending) from the account service

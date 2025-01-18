@@ -1,8 +1,8 @@
 package com.toby.nichol.starling.service;
 
-import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import org.junit.jupiter.api.Assertions;
+import com.toby.nichol.starling.config.exception.CsvParsingException;
+import com.toby.nichol.starling.config.exception.EmptyOutgoingsException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +24,7 @@ import java.util.Objects;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 @WireMockTest(httpPort = 8081)
@@ -46,19 +47,61 @@ class AccountServiceTest {
 
     @Test
     public void AccountServiceShouldGetAccountStatementForGivenWeek() throws IOException {
-        getStub(bearer);
+        getPositiveStub(bearer);
         String startDate = "2024-12-09";
         String endDate = "2024-12-13";
         List<BigDecimal> expectedStatementOutput = List.of(new BigDecimal("-34.30"), new BigDecimal("-7.60"), new BigDecimal("-28.03"), new BigDecimal("-25.63"), new BigDecimal("-6.41"), new BigDecimal("-32.72"));
         List<BigDecimal> actual = accountService.getAccountSpends(customerUid, startDate, endDate, bearer);
-        //assert that we have the right amount of values and they are the values we expect.
+        //assert that we have the right amount of values, and they are the values we expect.
         assertEquals(expectedStatementOutput.size(), actual.size());
         assertEquals(expectedStatementOutput, actual);
     }
 
+    @Test
+    public void AccountServiceShouldThrowErrorIfOutgoingsReturnEmpty() throws IOException {
+        String path = "src/test/resources"+ "/data/statementWithNoOutgoingsException.csv";
+        getNegativeStub(bearer, path);
+        String startDate = "2024-12-09";
+        String endDate = "2024-12-13";
+
+        assertThrows(EmptyOutgoingsException.class, () -> {
+            accountService.getAccountSpends(customerUid, startDate, endDate, bearer);
+        });
+    }
+
+    @Test
+    public void AccountServiceShouldThrowErrorIfCsvCanNotParseEmpty() throws IOException {
+        String path = "src/test/resources"+ "/data/statementWithCsvParsingException.csv";
+        getNegativeStub(bearer, path);
+        String startDate = "2024-12-09";
+        String endDate = "2024-12-13";
+
+        assertThrows(CsvParsingException.class, () -> {
+            accountService.getAccountSpends(customerUid, startDate, endDate, bearer);
+        });
+    }
+
     //generates a wiremock stub to be tested against. Will return a statement response in csv format for any request matching the pattern below.
-    private void getStub(String bearer) throws IOException {
+    private void getPositiveStub(String bearer) throws IOException {
         String path = "src/test/resources"+ "/data/statement.csv";
+        File file = new File(path);
+        String absolutePath = file.getAbsolutePath();
+        String JsonString = IOUtils.toString(
+                Objects.requireNonNull(
+                        Files.newInputStream(
+                                Paths.get(
+                                        absolutePath))), "UTF-8");
+        stubFor(any(urlPathMatching("/api/v2/accounts/[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}/statement/downloadForDateRange"))
+                .willReturn(aResponse()
+                        .withStatus(HttpURLConnection.HTTP_OK)
+                        .withHeader("Accept", "text/csv")
+                        .withHeader("Authorization", bearer)
+                        .withBody(JsonString)));
+    }
+
+
+    //generates a wiremock stub to be tested against. Will return a statement response in csv format for any request matching the pattern below.
+    private void getNegativeStub(String bearer, String path) throws IOException {
         File file = new File(path);
         String absolutePath = file.getAbsolutePath();
         String JsonString = IOUtils.toString(
