@@ -3,6 +3,8 @@ package com.toby.nichol.starling.service;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import com.toby.nichol.starling.config.exception.CsvParsingException;
+import com.toby.nichol.starling.config.exception.EmptyOutgoingsException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -68,10 +70,12 @@ public class AccountService {
                     .filter(number -> number.compareTo(BigDecimal.ZERO) < 0)
                     .toList();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new CsvParsingException("There was an error when attempting to parse the CSV data.");
         }
         if(amounts.isEmpty()){
-            
+            throw new EmptyOutgoingsException("there are no outgoing transactions for the selected time period.");
+        }else{
+            return amounts;
         }
     }
 
